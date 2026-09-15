@@ -2,19 +2,32 @@ import json
 import time
 import requests
 from kafka import KafkaProducer
+# from configuration import config
+from app.configuration.config import config
 
-KAKFA_BROKER = "localhost:9092"
-KAFKA_TOPIC = "crypto-prices"
+KAKFA_BROKER = config["kafka"]["bootstrap_servers"]
+#"localhost:9092"
+KAFKA_TOPIC = config["kafka"]["topic"]
+#"crypto-prices"
 
-COINGEKCO_URL = "https://api.coingecko.com/api/v3/coins/markets"
+COINGEKCO_URL = config["coingecko"]["url"] 
+# "https://api.coingecko.com/api/v3/coins/markets"
+
+# vs_currency = usd
+# ids = bitcoin,ethereum,solana,cardano,ripple,dogecoin,polkadot,binancecoin,avalanche,chainlink,polygon,cosmos,uniswap,litecoin,stellar,vechain,shiba-inu,tron,tezos,neo
+# order = market_cap_desc
+# per_page = 20
+# page = 1
+# sparkline = false
+# price_change_percentage = 24h
 PARAMS = {
-    'vs_currency': 'usd',
-    'ids': 'bitcoin,ethereum,solana,cardano,ripple,dogecoin,polkadot,binancecoin,avalanche,chainlink,polygon,cosmos,uniswap,litecoin,stellar,vechain,shiba-inu,tron,tezos,neo',
-    'order': 'market_cap_desc',
-    'per_page': 20,
-    'page': 1,
-    'sparkline': 'false',
-    'price_change_percentage': '24h'
+    'vs_currency': config["coingecko"]["vs_currency"],
+    'ids': config["coingecko"]["ids"],
+    'order': config["coingecko"]["order"],
+    'per_page': config["coingecko"]["per_page"],
+    'page': config["coingecko"]["page"],
+    'sparkline': config["coingecko"]["sparkline"],
+    'price_change_percentage': config["coingecko"]["price_change_percentage"],
 }
 
 desired_keys = [

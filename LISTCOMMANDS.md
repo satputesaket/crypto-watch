@@ -1,8 +1,13 @@
 ## INGESTION
 
+###prev
 ```
 python app/ingestion/crypto_market_ingestion.py
 
+```
+### latest
+```
+(.venv) (base) saket@ADITIs-MacBook-Pro crypto-watch % python -m app.ingestion.crypto_market_ingestion
 ```
 
 
