@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col, explode
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType, ArrayType
+from app.configuration.config import config
 
 # Define schema for individual coin
 coin_schema = StructType([
@@ -22,7 +23,7 @@ schema = StructType([
 
 # Create SparkSession
 spark = SparkSession.builder \
-    .appName("KafkaCryptoConsumer") \
+    .appName(config["spark"]["ingestion_app_name"]) \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
@@ -30,7 +31,7 @@ spark.sparkContext.setLogLevel("ERROR")
 # Read from Kafka topic - from beginning
 raw_df = spark.readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers", "kafka:29092") \
+    .option("kafka.bootstrap.servers", config["kafka"]["bootstrap_servers_internal"]) \
     .option("subscribe", "crypto-prices") \
     .option("startingOffsets", "earliest") \
     .option("failOnDataLoss", "false") \
@@ -58,14 +59,14 @@ flattened_df = parsed_df.select(
 )
 
 # Define the output path for the Parquet files
-output_path = "file:/app/dataframes"
-checkpoint_path = "file:/app/checkpoints"
+output_path = config["spark"]["output_path"]
+checkpoint_path = config["spark"]["checkpoint_path"]
 
 # Write to Parquet files in the specified folder
 query = flattened_df.writeStream \
     .format("parquet") \
     .outputMode("append") \
-    .trigger(processingTime="30 seconds") \
+    .trigger(processingTime=config["spark"]["processing_time"]) \
     .option("path", output_path) \
     .option("checkpointLocation", checkpoint_path) \
     .start()

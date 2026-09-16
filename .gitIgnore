@@ -8,8 +8,8 @@ __pycache__/
 *.py[cod]
 
 # Spark runtime artifacts
-app/checkpoints/
-app/dataframes/
+checkpoints/
+dataframes/
 spark-warehouse/
 metastore_db/
 
@@ -29,3 +29,6 @@ logs/
 .vscode/
 .idea/
 *.iml
+
+
+.env

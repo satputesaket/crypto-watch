@@ -5,23 +5,38 @@ from pyspark.sql.window import Window
 from pyspark.sql.types import DoubleType
 import traceback
 import pyspark.sql.functions as F
+from app.configuration.config import config
+import os
+
+# [postgres]
+# host = postgres
+# port = 5432
+# database = crypto_metrics
+# user = postgres
+# driver = org.postgresql.Driver
+
+postgres_password = os.getenv("POSTGRES_PASSWORD")
+
+if not postgres_password:
+    raise RuntimeError("POSTGRES_PASSWORD environment variable is not set")
 
 spark = SparkSession.builder \
-    .appName("CryptoMetricsCalculator") \
+    .appName(config["spark"]["analytics_app_name"]) \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
 
-# === PostgreSQL Connection Config ===
-#jdbc_url = "jdbc:postgresql://localhost:5432/crypto_metrics"
-jdbc_url = "jdbc:postgresql://postgres:5432/crypto_metrics"
-main_table = "crypto_table"
-gainers_table = "top_5_gainers"
-losers_table = "top_5_losers"
+postgres = config["postgres"]
+
+jdbc_url = (
+    f"jdbc:postgresql://{postgres['host']}:"
+    f"{postgres['port']}/{postgres['database']}"
+)
+
 db_properties = {
-    "user": "postgres",
-    "password": "admin",
-    "driver": "org.postgresql.Driver"
+    "user": postgres["user"],
+    "password": postgres_password,
+    "driver": postgres["driver"]
 }
 
 while True:
@@ -30,7 +45,7 @@ while True:
 
         # Load recent parquet files and drop unused columns
         df = spark.read.parquet(
-            "file:/app/dataframes"
+            config["spark"]["output_path"]
         ).drop(
             "market_cap", "total_volume", "high_24h", "low_24h", "last_updated"
         )
@@ -114,21 +129,21 @@ while True:
             # Write to PostgreSQL 
             latest_data.write.jdbc(
                 url=jdbc_url,
-                table=main_table,
+                table=config["analytics"]["main_table"],
                 mode="append",
                 properties=db_properties
             )
 
             gain_df.write.jdbc(
                 url=jdbc_url,
-                table=gainers_table,
+                table=config["analytics"]["gainers_table"],
                 mode="overwrite",
                 properties=db_properties
             )
 
             loss_df.write.jdbc(
                 url=jdbc_url,
-                table=losers_table,
+                table=config["analytics"]["losers_table"],
                 mode="overwrite",
                 properties=db_properties
             )
