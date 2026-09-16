@@ -4,7 +4,7 @@ This document records the commands used to start the local infrastructure,
 create the Kafka topic, prepare Spark's Ivy cache, and run the Spark
 streaming and analytics jobs.
 
-## 1. Start the Docker Compose services
+## 0. Start the Docker Compose services
 
 Start Kafka, PostgreSQL, and Spark in detached mode:
 
@@ -33,7 +33,7 @@ For this project:
 
 ---
 
-## 2. Stop the Docker Compose services
+## 1. Stop the Docker Compose services
 
 To stop and remove the containers and Compose network:
 
@@ -57,6 +57,13 @@ such as the PostgreSQL data volume are retained unless you explicitly use
 `docker compose down -v`.
 
 ---
+
+## 2. Run the ingestion script
+
+
+```bash
+python -m app.ingestion.crypto_market_ingestion
+```
 
 ## 3. Check Kafka topics
 

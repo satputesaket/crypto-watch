@@ -4,22 +4,21 @@ import requests
 from kafka import KafkaProducer
 # from configuration import config
 from app.configuration.config import config
+import logging
+
+from app.configuration.logging_config import setup_logging
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
+
+
 
 KAKFA_BROKER = config["kafka"]["bootstrap_servers"]
-#"localhost:9092"
 KAFKA_TOPIC = config["kafka"]["topic"]
-#"crypto-prices"
 
 COINGEKCO_URL = config["coingecko"]["url"] 
-# "https://api.coingecko.com/api/v3/coins/markets"
 
-# vs_currency = usd
-# ids = bitcoin,ethereum,solana,cardano,ripple,dogecoin,polkadot,binancecoin,avalanche,chainlink,polygon,cosmos,uniswap,litecoin,stellar,vechain,shiba-inu,tron,tezos,neo
-# order = market_cap_desc
-# per_page = 20
-# page = 1
-# sparkline = false
-# price_change_percentage = 24h
 PARAMS = {
     'vs_currency': config["coingecko"]["vs_currency"],
     'ids': config["coingecko"]["ids"],
@@ -43,6 +42,7 @@ producer = KafkaProducer(
 print("Streaming filtered crypto data from CoinGecko to Kafka...")
 
 try:
+    logger.info("Starting crypto market ingestion")
     while True:
         response = requests.get(COINGEKCO_URL, params=PARAMS)
         if response.status_code == 200:
@@ -61,10 +61,12 @@ try:
 
             producer.send(KAFKA_TOPIC, value=payload)
             print(f"Pushed {len(filtered_data)} records at {payload['timestamp']}")
+            logger.info(f"Pushed {len(filtered_data)} records at {payload['timestamp']}")
+
 
         else:
             print(f"API Error: {response.status_code} - {response.text}")
-
+            logger.info(f"API Error: {response.status_code} - {response.text}")
         time.sleep(30)
         
 except KeyboardInterrupt:

@@ -8,12 +8,13 @@ import pyspark.sql.functions as F
 from app.configuration.config import config
 import os
 
-# [postgres]
-# host = postgres
-# port = 5432
-# database = crypto_metrics
-# user = postgres
-# driver = org.postgresql.Driver
+import logging
+
+from app.configuration.logging_config import setup_logging
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
 
 postgres_password = os.getenv("POSTGRES_PASSWORD")
 
@@ -60,6 +61,7 @@ while True:
 
         if row_count == 0:
             print("No data found in the last 7 minutes. Skipping this cycle.")
+            logger.info("No data found in the last 7 minutes. Skipping this cycle.")
         else:
             # Define window partition 
             coin_window = Window.partitionBy("id").orderBy("timestamp")
@@ -155,7 +157,9 @@ while True:
 
     except Exception as e:
         print(f"Error in Spark job: {e}")
+        logger.error(f"Error in Spark job: {e}")
         traceback.print_exc()
+        logger.error(f"Traceback error: {traceback.print_exc()}")
 
     # Sleep
     total_seconds = 360
