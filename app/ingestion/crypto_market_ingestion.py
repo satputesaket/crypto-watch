@@ -39,38 +39,47 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-print("Streaming filtered crypto data from CoinGecko to Kafka...")
 
 try:
     logger.info("Starting crypto market ingestion")
     while True:
-        response = requests.get(COINGEKCO_URL, params=PARAMS)
-        if response.status_code == 200:
-            data = response.json()
+        #response = requests.get(COINGEKCO_URL, params=PARAMS)
+        try:
+            response = requests.get(
+                COINGEKCO_URL,
+                params=PARAMS,
+                timeout=30
+            )
+            response.raise_for_status()
+
+        except requests.RequestException:
+            logger.exception("Failed to fetch data from CoinGecko")
+            time.sleep(30)
+            continue
+        # response.raise_for_status()
+        data = response.json()
 
             # Filter only desired keys from each coin
-            filtered_data = [
+        filtered_data = [
                 {key: coin.get(key) for key in desired_keys}
                 for coin in data
             ]
 
-            payload = {
+        payload = {
                 'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
                 'data': filtered_data
             }
 
-            producer.send(KAFKA_TOPIC, value=payload)
-            print(f"Pushed {len(filtered_data)} records at {payload['timestamp']}")
-            logger.info(f"Pushed {len(filtered_data)} records at {payload['timestamp']}")
+        producer.send(KAFKA_TOPIC, value=payload)
+        logger.info(
+                "Pushed %d records at %s",
+                len(filtered_data),
+                payload["timestamp"]
+            )
 
-
-        else:
-            print(f"API Error: {response.status_code} - {response.text}")
-            logger.info(f"API Error: {response.status_code} - {response.text}")
-        time.sleep(30)
         
 except KeyboardInterrupt:
-    print("\nStopped manually.")
+    logger.info("\nStopped manually.")
 
 finally:
     producer.close()        

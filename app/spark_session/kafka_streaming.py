@@ -3,6 +3,14 @@ from pyspark.sql.functions import from_json, col, explode
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType, ArrayType
 from app.configuration.config import config
 
+import logging
+
+from app.configuration.logging_config import setup_logging
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
+
 # Define schema for individual coin
 coin_schema = StructType([
     StructField("id", StringType(), True),
@@ -28,11 +36,15 @@ spark = SparkSession.builder \
 
 spark.sparkContext.setLogLevel("ERROR")
 
+logger.info("Starting Kafka streaming job")
+logger.info("Reading from Kafka topic: %s", config["kafka"]["topic"])
+
+
 # Read from Kafka topic - from beginning
 raw_df = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", config["kafka"]["bootstrap_servers_internal"]) \
-    .option("subscribe", "crypto-prices") \
+    .option("subscribe", config["kafka"]["topic"]) \
     .option("startingOffsets", "earliest") \
     .option("failOnDataLoss", "false") \
     .load()
@@ -62,6 +74,8 @@ flattened_df = parsed_df.select(
 output_path = config["spark"]["output_path"]
 checkpoint_path = config["spark"]["checkpoint_path"]
 
+logger.info("Writing streaming data to: %s", output_path)
+
 # Write to Parquet files in the specified folder
 query = flattened_df.writeStream \
     .format("parquet") \
@@ -71,4 +85,10 @@ query = flattened_df.writeStream \
     .option("checkpointLocation", checkpoint_path) \
     .start()
 
-query.awaitTermination()
+try:
+    query.awaitTermination()
+except Exception:
+    logger.exception("Kafka streaming job failed")
+    raise
+finally:
+    logger.info("Kafka streaming job stopped")

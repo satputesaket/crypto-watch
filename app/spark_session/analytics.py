@@ -3,7 +3,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_timestamp, avg, stddev, lag, lit, round, when, row_number
 from pyspark.sql.window import Window
 from pyspark.sql.types import DoubleType
-import traceback
 import pyspark.sql.functions as F
 from app.configuration.config import config
 import os
@@ -60,7 +59,6 @@ while True:
         row_count = latest_data.count()
 
         if row_count == 0:
-            print("No data found in the last 7 minutes. Skipping this cycle.")
             logger.info("No data found in the last 7 minutes. Skipping this cycle.")
         else:
             # Define window partition 
@@ -156,10 +154,7 @@ while True:
         spark.catalog.clearCache()
 
     except Exception as e:
-        print(f"Error in Spark job: {e}")
-        logger.error(f"Error in Spark job: {e}")
-        traceback.print_exc()
-        logger.error(f"Traceback error: {traceback.print_exc()}")
+        logger.exception("Error in Spark job")
 
     # Sleep
     total_seconds = 360
