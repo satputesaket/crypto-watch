@@ -188,7 +188,6 @@ def run_ingestion() -> None:
 # ---------------------------------------------------------
 
 if __name__ == "__main__":
-    print("Started")
     run_ingestion()
 
   

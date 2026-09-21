@@ -1,9 +1,14 @@
 certifi==2025.4.26
 charset-normalizer==3.4.2
 idna==3.10
+iniconfig==2.3.0
 kafka-python==2.2.4
+packaging==26.3
+pluggy==1.6.0
 py4j==0.10.9.7
+Pygments==2.21.0
 pyspark==3.5.5
+pytest==9.1.1
 python-dotenv==1.1.0
 requests==2.32.3
 urllib3==2.4.0
